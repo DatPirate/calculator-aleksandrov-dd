@@ -106,7 +106,7 @@ int main() {
     fgets(expr, MAX_EXPR_LEN, stdin);
  
     to_rpn(expr, rpn);
-    printf("%d\n", evaluate_rpn(rpn));
+    printf("%d", evaluate_rpn(rpn));
  
     return 0;
 }
