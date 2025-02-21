@@ -77,7 +77,7 @@ void to_rpn(const char *expr, char *output) {
     strcpy(output, temp);
 }
  
-double evaluate_rpn(const char *rpn) {
+int evaluate_rpn(const char *rpn) {
     Stack numStack = { .top = -1 };
     char *token = strtok(strdup(rpn), " ");
  
@@ -96,7 +96,7 @@ double evaluate_rpn(const char *rpn) {
         }
         token = strtok(NULL, " ");
     }
-    return pop(&numStack);
+    return (int)pop(&numStack);
 }
  
 int main() {
@@ -106,7 +106,7 @@ int main() {
     fgets(expr, MAX_EXPR_LEN, stdin);
  
     to_rpn(expr, rpn);
-    printf("%lf\n", evaluate_rpn(rpn));
+    printf("%d\n", evaluate_rpn(rpn));
  
     return 0;
 }
