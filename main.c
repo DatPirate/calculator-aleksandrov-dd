@@ -12,7 +12,7 @@ typedef struct {
     int top;
 } Stack;
  
-void push(Stack *stack, double value) {
+void push(Stack *stack, int value) {
     if (stack->top < MAX_STACK_SIZE - 1) {
         stack->data[++stack->top] = value;
     }
@@ -85,13 +85,13 @@ int evaluate_rpn(const char *rpn) {
         if (isdigit(token[0]) || (token[0] == '-' && isdigit(token[1]))) {
             push(&numStack, atof(token));
         } else if (is_operator(token[0]) && strlen(token) == 1) {
-            double b = pop(&numStack);
-            double a = pop(&numStack);
+            int b = pop(&numStack);
+            int a = pop(&numStack);
             switch (token[0]) {
                 case '+': push(&numStack, a + b); break;
                 case '-': push(&numStack, a - b); break;
                 case '*': push(&numStack, a * b); break;
-                case '/': push(&numStack, a / b); break;
+                case '/': push(&numStack, (int)(a / b)); break;
             }
         }
         token = strtok(NULL, " ");
@@ -106,7 +106,7 @@ int main() {
     fgets(expr, MAX_EXPR_LEN, stdin);
  
     to_rpn(expr, rpn);
-    printf("%d", evaluate_rpn(rpn));
+    printf("%d\n", evaluate_rpn(rpn));
  
     return 0;
 }
