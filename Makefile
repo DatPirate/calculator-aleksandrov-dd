@@ -1,111 +1,89 @@
- Tools
-CC  ?= gcc
-CXX ?= g++
-AR  ?= ar
+# Настройки компилятора
+CC := gcc
+CXX := g++
+CFLAGS := -Wall -Wextra -Wpedantic -Werror -std=c11
+CXXFLAGS := -Wall -Wextra -Wpedantic -Werror -std=c++17
 
-# Google Test root directory
-GTEST_DIR ?= googletest/googletest
 
-# Directories
-SRC_DIR   ?= src
-TESTS_DIR ?= tests
-BUILD_DIR ?= build
+BUILD_DIR := build
 
-APP_BUILD_DIR=$(BUILD_DIR)/app
-TEST_BUILD_DIR=$(BUILD_DIR)/test
+# Настройки Google Test
+GTEST_DIR := googletest/googletest
+GTEST_SRC_DIR := $(GTEST_DIR)/src
+GTEST_HEADERS := $(GTEST_DIR)/include/gtest/*.h $(GTEST_DIR)/include/gtest/internal/*.h
+GTEST_BUILD_DIR := $(BUILD_DIR)/gtest
+GTEST_ALL_OBJ  := $(GTEST_BUILD_DIR)/gtest-all.o
+GTEST_MAIN_OBJ := $(GTEST_BUILD_DIR)/gtest_main.o
+GTEST_MAIN_A   := $(GTEST_BUILD_DIR)/gtest_main.a
 
-TEST_BUILD_DIR_APP_OBJS=$(TEST_BUILD_DIR)/app
-TEST_BUILD_DIR_UNIT_TESTS_OBJS=$(TEST_BUILD_DIR)/unit-tests
+# Исходные файлы приложения
+APP_SRC := src/main.c src/main.c
+APP_OBJ := $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(APP_SRC))
 
-# Flags
-CPPFLAGS += -isystem $(GTEST_DIR)/include
-CXXFLAGS += -g -Wall -Wextra -pthread
-CFLAGS   += -g -Wall -Wextra -Wpedantic -Werror -std=c11
+# Все тестовые .cpp
+TEST_SRCS := tests/unit/testfunc.cpp
 
-# Find all C source files recursively
-APP_SRCS := $(shell find $(SRC_DIR) -name '*.c')
+# Основные цели
+.PHONY: all clean run-int run-float run-unit-test clone-gtest
 
-# Find all test files inside the tests directory
-TEST_SRCS := $(shell find $(TESTS_DIR) -name '*.cpp')
-
-# Generate object file paths
-APP_OBJS := $(patsubst $(SRC_DIR)/%.c, $(APP_BUILD_DIR)/%.o, $(APP_SRCS))
-TEST_OBJS := $(patsubst $(SRC_DIR)/%.c, $(TEST_BUILD_DIR_APP_OBJS)/%.o, $(APP_SRCS))
-UNIT_TESTS_OBJS := $(patsubst $(TESTS_DIR)/%.cpp, $(TEST_BUILD_DIR_UNIT_TESTS_OBJS)/%.o, $(TEST_SRCS))
-
-# Google Test headers
-GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h $(GTEST_DIR)/include/gtest/internal/*.h
-
-# Create necessary build directories
-$(shell mkdir -p $(APP_BUILD_DIR) $(TEST_BUILD_DIR))
-
-################
-# MAIN TARGETS #
-################
-
-# Housekeeping targets
-all: $(BUILD_DIR)/app.exe $(BUILD_DIR)/unit-tests.exe
+all: build/app.exe build/unit-tests.exe
 
 clean:
-	rm -rf $(BUILD_DIR)
+	@echo "Очистка проекта..."
+	rm -rf $(BUILD_DIR)/
+	rm -rf tests/integration/__pycache__
+	rm -rf .pytest_cache
 
-# Run the normal C application
-run-int: $(BUILD_DIR)/app.exe
-	@$<
 
-# Run the normal C application with floating point numbers
-run-float: $(BUILD_DIR)/app.exe
-	@$< --float
+# Сборка приложения
+$(BUILD_DIR)/%.o: src/%.c
+	  @echo "Компиляция $@"
+	  @mkdir -p $(BUILD_DIR)
+	  $(CC) $(CFLAGS) -c $< -o $@
 
-# Run all tests
-run-unit-tests: $(BUILD_DIR)/unit-tests.exe
-	@$<
+build/app.exe: $(APP_OBJ)
+	  @echo "Сборка app.exe"
+	  $(CC) $(CFLAGS) -o $@ $^ -lm
+	  
+# Сборка тестовой версии приложения
+build/app-test.o: src/main.c
+	  @echo "Сборка app-test.o с флагом -DUNIT_TEST"
+	  @mkdir -p $(BUILD_DIR)
+	  $(CC) $(CFLAGS) -DUNIT_TEST -DGTEST -c $< -o $@ -g
 
-#############
-# BUILD APP #
-#############
+# Сборка Google Test
+$(GTEST_ALL_OBJ): $(GTEST_SRC_DIR)/gtest-all.cc $(GTEST_HEADERS)
+	  @echo "Компиляция gtest-all.o"
+	  @mkdir -p $(GTEST_BUILD_DIR)
+	  $(CXX) $(CXXFLAGS) -isystem $(GTEST_DIR)/include -I$(GTEST_DIR) -c $< -o $@
 
-# Compile normal C application files (without -DGTEST)
--include $(APP_OBJS:.o=.d)
-$(APP_BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+$(GTEST_MAIN_OBJ): $(GTEST_SRC_DIR)/gtest_main.cc $(GTEST_HEADERS)
+	  @echo "Компиляция gtest_main.o"
+	  @mkdir -p $(GTEST_BUILD_DIR)
+	  $(CXX) $(CXXFLAGS) -isystem $(GTEST_DIR)/include -I$(GTEST_DIR) -c $< -o $@
 
-# Link the normal C application
-$(BUILD_DIR)/app.exe: $(APP_OBJS)
-	$(CC) $(CFLAGS) $^ -o $@
+$(GTEST_MAIN_A): $(GTEST_ALL_OBJ) $(GTEST_MAIN_OBJ)
+	  @echo "Создание архива gtest_main.a"
+	  ar rcs $@ $^
 
-###############
-# BUILD TESTS #
-###############
+# Сборка unit-тестов
+build/unit-tests.exe: $(GTEST_MAIN_A) build/app-test.o $(TEST_SRCS)
+	  @echo "Сборка unit-tests.exe"
+	  $(CXX) $(CXXFLAGS) -isystem $(GTEST_DIR)/include -pthread \
+	  $(TEST_SRCS) build/app-test.o $(GTEST_MAIN_A) \
+	  -o $@
 
-# Compile test version of C application files (with -DGTEST)
--include $(TEST_OBJS:.o=.d)
-$(TEST_BUILD_DIR_APP_OBJS)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -MMD -MP -DGTEST -c $< -o $@
+# Запуск приложения в целочисленном режиме
+run-int: build/app.exe
+	  @echo "Запуск в целочисленном режиме"
+	  @./build/app.exe
 
-# Compile each C++ test source file into an object file (always with -DGTEST)
--include $(UNIT_TESTS_OBJS:.o=.d)
-$(TEST_BUILD_DIR_UNIT_TESTS_OBJS)/%.o: $(TESTS_DIR)/%.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
+# Запуск приложения в режиме с плавающей точкой
+run-float: build/app.exe
+	  @echo "Запуск в режиме с плавающей точкой"
+	  @./build/app.exe --float
 
-# Link test executable with the TEST version of the C application and gtest
-$(BUILD_DIR)/unit-tests.exe: $(TEST_OBJS) $(UNIT_TESTS_OBJS) $(TEST_BUILD_DIR)/gtest_main.a
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
-
-####################################
-# BUILD GOOGLE TEST STATIC LIBRARY #
-####################################
-
-# Google Test object files
-$(TEST_BUILD_DIR)/gtest-all.o: $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c $(GTEST_DIR)/src/gtest-all.cc -o $@
-
-$(TEST_BUILD_DIR)/gtest_main.o: $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEADERS)
-	$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c $(GTEST_DIR)/src/gtest_main.cc -o $@
-
-# Google Test static libraries
-$(TEST_BUILD_DIR)/gtest_main.a: $(TEST_BUILD_DIR)/gtest-all.o $(TEST_BUILD_DIR)/gtest_main.o
-	$(AR) $(ARFLAGS) $@ $^ -o $@
+# Запуск unit-тестов
+run-unit-test: build/unit-tests.exe
+	  @echo "Запуск unit-тестов..."
+	  @./build/unit-tests.exe
