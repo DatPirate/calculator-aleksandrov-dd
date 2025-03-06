@@ -7,7 +7,7 @@
 #define MAX_EXPR_LEN 1024
 #define MAX_STACK_SIZE 512
 
-char * strdup(const char*);
+char* strdup(const char*);
 
 typedef struct {
     double data[MAX_STACK_SIZE];
