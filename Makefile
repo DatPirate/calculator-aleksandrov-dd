@@ -16,6 +16,10 @@ GTEST_ALL_OBJ  := $(GTEST_BUILD_DIR)/gtest-all.o
 GTEST_MAIN_OBJ := $(GTEST_BUILD_DIR)/gtest_main.o
 GTEST_MAIN_A   := $(GTEST_BUILD_DIR)/gtest_main.a
 
+# Настройки виртуального окружения Python
+VENV_DIR := build/venv
+PYTEST = $(VENV_DIR)/bin/pytest	
+
 # Исходные файлы приложения
 APP_SRC := src/main.c src/main.c
 APP_OBJ := $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(APP_SRC))
@@ -24,7 +28,7 @@ APP_OBJ := $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(APP_SRC))
 TEST_SRCS := tests/unit/testfunc.cpp
 
 # Основные цели
-.PHONY: all clean run-int run-float run-unit-test clone-gtest
+.PHONY: all clean run-int run-float run-unit-test run-integration-tests venv clone-gtest
 
 all: build/app.exe build/unit-tests.exe
 
@@ -87,3 +91,18 @@ run-float: build/app.exe
 run-unit-test: build/unit-tests.exe
 	  @echo "Запуск unit-тестов..."
 	  @./build/unit-tests.exe
+	  
+# Создание виртуального окружения Python
+venv:
+	  @echo "Создание виртуального окружения $(VENV_DIR)"
+	  @if [ ! -d "$(VENV_DIR)" ]; then \
+	    python3 -m venv $(VENV_DIR); \
+	    $(VENV_DIR)/bin/python3 -m pip install --upgrade pip; \
+	    $(VENV_DIR)/bin/pip install pytest; \
+	  fi
+
+# Запуск интеграционных тестов
+run-integration-tests: build/app.exe venv tests/integration/calctest.py
+	  @echo "Запуск интеграционных тестов с pytest..."
+	  @. $(VENV_DIR)/bin/activate && $(VENV_DIR)/bin/pytest tests/integration/calctest.py
+	 

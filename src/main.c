@@ -5,7 +5,7 @@
 #include <string.h>
 
 #define MAX_EXPR_LEN 1024
-#define MAX_STACK_SIZE 512
+#define MAX_STACK_SIZE 1024
 
 char* strdup(const char*);
 
