@@ -48,3 +48,7 @@ This is a simple C program that reads an arithmetic expression from standard inp
 - Gpt
 - habr.com
 - cyberforum.ru
+
+##  ДЗ 4
+  11 марта 2025.
+  Выдача задания: Создать файл server.py
