@@ -5,6 +5,18 @@ from urllib.parse import urlparse, parse_qs
 class CalcHandler(BaseHTTPRequestHandler):
     def do_POST(self):
     	try:
+    		content_length = int(self.headers['Content-Length'])
+    		post_data = self.rfile.read(content_length)
+    		
+    		try:
+    			data = json.loads(post_data)
+    		except Exception as e:
+		    	self.send_response(400)
+		    	self.send_header("Content-Type", "application/json")
+		    	self.end_headers()
+		    	self.wfile.write(json.dumps({"error": "Invalid JSON"}).encode("utf-8"))
+		    	return
+    		
 		output = "request recieved"
 		self.send_response(200)
 		self.send_header("Content-Type", "application/json")
