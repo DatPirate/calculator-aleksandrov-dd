@@ -1,17 +1,50 @@
 # calculator-aleksandrov-dd
-This is a simple C program that reads an arithmetic expression from standard input, parses it and evaluates the result. The program support the following operations on integers: `+`, `-`, `*`, `/` and parentheses (`(` and `)`). It also allows and handles whitespace characters in the input.
 
-## Features
+## What has been done?
 
-- Supported operators: +, -, *, /, (, ).
-- Whitespace handling: Handles whitespace in the input expression.
-- Output: The program outputs only the result (an integer) without extra messages
+This is a simple C program that reads an arithmetic expression from standard input, parses it and evaluates the result. The program support the following operations on integers: `+`, `-`, `*`, `/` and parentheses (`(` and `)`). The result may be integer or float, depending on chosen mode.
 
-## Requirements
-- C compiler (e.g. gcc)
+### Features
+
+- Supported operators: +, -, *, /, (, )
+- Whitespace handling: Handles whitespace in the input expression
+- Input validation: program handles nested parentheses and blocks invalid symbols or problematic constructs
+- Output: The program outputs only the result without extra messages
+
+## How to run/use it?
+
+### Requirements
+- gcc compiler
 - Standard C library (libc)
+- make
+- Python 3 and pytest (for integration tests)
 
-## Sources
+### Building and running
+1. Clone the repository and run `make all` to build everything
+2. Launch program:
+   - Integer mode:
+   	`make run-int`
+   - Float mode:
+   	`make run-float`
+
+### Testing
+- Unit tests:
+	`make run-unit-test`
+	
+- Integration tests:
+	`make run-integration-tests`
+
+## How was it made?
+
+### Technology
+- Programming language: C (main code), C++ (unit tests), Python (integration tests).
+- Instruments:
+  - make (building automation)
+  - clang-format (code formatting)
+  - Google Test (unit tests)
+  - pytest (integration tests)
+
+### Sources
 - Gpt
 - habr.com
 - cyberforum.ru
