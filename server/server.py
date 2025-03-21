@@ -1,6 +1,9 @@
 import json
+import subprocess
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
+ 
+CALCULATOR_EXECUTABLE = "../build/app.exe"
  
 class CalcHandler(BaseHTTPRequestHandler):
 	def do_POST(self):
@@ -24,13 +27,20 @@ class CalcHandler(BaseHTTPRequestHandler):
 			expression = data if isinstance(data, str) else ""
 			query_params = parse_qs(parsed_url.query)
 			float_mode = query_params.get("float", ["false"])[0].lower() == "true"
- 
+			command = [CALCULATOR_EXECUTABLE, expression]
+			result = subprocess.run(command, capture_output=True, text=True)
 
-			output = "request recieved"
-			self.send_response(200)
-			self.send_header("Content-Type", "application/json")
-			self.end_headers()
-			self.wfile.write(json.dumps(output).encode("utf-8"))
+
+			if result.returncode == 0:
+				output = result.stdout.strip()
+				if not float_mode and "." in output:
+					output = str(int(float(output)))
+				self.send_response(200)
+				self.send_header("Content-Type", "application/json")
+				self.end_headers()
+				self.wfile.write(json.dumps(output).encode("utf-8"))
+			else:
+				raise Exception(result.stderr.strip())
 		except Exception as e:
 			self.send_response(500)
 			self.send_header("Content-Type", "application/json")
