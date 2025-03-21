@@ -52,5 +52,4 @@ if __name__ == "__main__":
 	httpd = HTTPServer(server_address, CalcHandler)
 	print("Starting server on port 8000...")
 	httpd.serve_forever()
- 
- 
+
