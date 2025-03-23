@@ -19,22 +19,22 @@ class CalcHandler(BaseHTTPRequestHandler):
 			try:
 				data = json.loads(body)
 			except Exception as e:
-		    		self.send_response(400)
-		    		self.send_header("Content-Type", "application/json")
-		    		self.end_headers()
-		    		self.wfile.write(json.dumps({"error": "Invalid JSON"}).encode("utf-8"))
-		    		return
+				self.send_response(400)
+				self.send_header("Content-Type", "application/json")
+				self.end_headers()
+				self.wfile.write(json.dumps({"error": "Invalid JSON"}).encode("utf-8"))
+				return
 			expression = data if isinstance(data, str) else ""
 			query_params = parse_qs(parsed_url.query)
 			float_mode = query_params.get("float", ["false"])[0].lower() == "true"
-			command = [CALCULATOR_EXECUTABLE, expression]
-			result = subprocess.run(command, capture_output=True, text=True)
+			command = [CALCULATOR_EXECUTABLE]
+			if float_mode:
+				command = [CALCULATOR_EXECUTABLE, "--float"]
+			result = subprocess.run(command, input=expression, capture_output=True, text=True)
 
 
 			if result.returncode == 0:
 				output = result.stdout.strip()
-				if not float_mode and "." in output:
-					output = str(int(float(output)))
 				self.send_response(200)
 				self.send_header("Content-Type", "application/json")
 				self.end_headers()
